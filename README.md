@@ -22,14 +22,28 @@ A python wrapper for the [Bitso API](https://bitso.com/api_info/)
 
 # Public calls #
 
+### Available Books ###
+
+```python
+## Order books available on Bitso
+ >>> books = api.available_books()
+ >>> books
+ [AvilableBook(book=btc_mxn), AvilableBook(book=eth_mxn)]
+ >>>books[0].book
+u'btc_mxn'
+ >>> books[0].minimum_amount
+Decimal('0.00500000')
+ ```
+
+
 ### Ticker ###
 
 ```python
 ## Ticker information
 ## Parameters
-## [book = btc_mxn] - Specifies which book to use
+## [book] - Specifies which book to use
 ##                  - string
- >>> tick = api.ticker()
+ >>> tick = api.ticker('btc_mxn')
  >>> tick
  Ticker(ask=7866.27, bid=7795.00, high=7866.27, last=7866.27, low=7707.43, datetime=2016-04-22 16:46:25, vwaplow=7795.00)
  >>> tick.last
@@ -44,56 +58,61 @@ A python wrapper for the [Bitso API](https://bitso.com/api_info/)
 ```python
 ## Public order book
 ## Parameters
-## [book = btc_mxn] - Specifies which book to use
+## [book] - Specifies which book to use
 ##                  - string
-## [group = True] - Group orders with the same price
+## [aggregate = True] - Group orders with the same price
 ##                - boolean
->>> ob = api.order_book()
->>> ob.datetime  
-datetime.datetime(2016, 4, 22, 18, 24, 58)
+>>> ob = api.order_book('btc_mxn')
+>>> ob.updated_at
+atetime.datetime(2016, 12, 13, 22, 54, 2, tzinfo=tzutc()) 
 >>> ob.bids
-[                  
-  {
-    'price': decimal,   ## Price for bid
-    'amount': decimal   ## Amount bid
-   }, ...
+[PublcOrder(book=btc_mxn,price=3160.00, amount=0.63966069),
+ PublcOrder(book=btc_mxn,price=2959.00, amount=0.72143122),
+ PublcOrder(book=btc_mxn,price=2850.00, amount=3.00000000),
+ PublcOrder(book=btc_mxn,price=2750.00, amount=1.00000000),
+ PublcOrder(book=btc_mxn,price=2500.12, amount=45.00000000),
+ ...
 ]
-
 >>> ob.asks
 
-[                   
-  {
-    'price': decimal,   ## Price for ask
-    'amount': decimal   ## Amount asked
-   }, ...
-]
-
-```
-
-### Transactions ###
-
-```python
-## Public transactions
-## Parameters
-## [book = 'btc_mxn'] - Specifies which book to use
-##                    - str
-## [time = 'hour']    - Time frame for transaction export ('hour', 'minute')
-##                    - str
->>> txs = api.transactions()
->>> txs
-[Transaction(tid=91314, price=7864.10, amount=0.81446192, side=sell, datetime=2016-04-22 13:47:29),
- Transaction(tid=91313, price=7864.10, amount=0.32061901, side=sell, datetime=2016-04-22 13:36:18),
- Transaction(tid=91312, price=7863.72, amount=0.00357865, side=buy, datetime=2016-04-22 13:34:27),
- Transaction(tid=91311, price=7863.72, amount=0.74986010, side=sell, datetime=2016-04-22 13:34:07),
+[PublcOrder(book=btc_mxn,price=8000.00, amount=48.37402966),
+ PublcOrder(book=btc_mxn,price=8160.00, amount=0.12340000),
+ PublcOrder(book=btc_mxn,price=9000.00, amount=40.00000000),
+ PublcOrder(book=btc_mxn,price=9160.00, amount=0.76500000)
  ...
  ]
 
->>> txs[0].price
-Decimal('7864.10')
->>> txs[0].amount
-Decimal('0.81446192')
->>> txs[0].datetime 
-datetime.datetime(2016, 4, 22, 13, 47, 29)
+```
+
+### Trades ###
+
+```python
+## Public trades
+## Parameters
+## [book = 'btc_mxn'] - Specifies which book to use
+##                    - str
+## [marker = None] - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                    - str
+## [sort = 'desc'] - Specifies ordering direction of returned objects (asc, desc)
+##                    - str
+## [limit = '25'] - Specifies number of objects to return. (Max is 100)
+##                    - str
+
+>>> trades = api.trades('btc_mxn')
+>>> trades
+[Trade(tid=1602, price=3160.00, amount=0.00797922, maker_side=buy, created_at=2016-12-13 21:32:05+00:00),
+ Trade(tid=1601, price=3160.00, amount=0.01000000, maker_side=buy, created_at=2016-12-13 21:32:05+00:00),
+ Trade(tid=1600, price=8000.00, amount=0.00312500, maker_side=sell, created_at=2016-12-13 21:32:04+00:00),
+ Trade(tid=1599, price=8000.00, amount=0.01008572, maker_side=sell, created_at=2016-12-13 21:32:04+00:00),
+ ...
+ ]
+
+>>> trades[0].price
+Decimal('3160.00')
+>>> trades[0].amount
+Decimal('0.00797922')
+>>> trades[0].created_at
+datetime.datetime(2016, 12, 13, 21, 32, 5, tzinfo=tzutc())
 
 ```
 
@@ -105,42 +124,168 @@ with your [Bitso credentials](https://bitso.com/api_info#generating-api-keys)
 
 ```python
  >>> import bitso
- >>> api = bitso.Api(CLIENT_ID, API_KEY, API_SECRET)
+ >>> api = bitso.Api(API_KEY, API_SECRET)
 ```
 
-### Account Balance ###
+### Account Status ###
 
 ```python
-## Your account balance
->>> balance = api.balance()
->>> balance.mxn_balance
-Decimal('4834.63')
->>> balance.btc_balance
-Decimal('1.01300152')
+## Your account status
+>>> status = api.account_status()
+>>> status.daily_limit
+Decimal('5300')
+>>> status.daily_remaining
+Decimal('5300.00')
 
 ```
 
-### User Transactions ###
+
+
+### Account Balances ###
 
 ```python
-## Your transactions
+## Your account balances
+>>> balances = api.balances()
+>>> balances[0].currency
+u'btc'
+>>> balances[0].available
+Decimal('3.46888741')
+
+```
+
+### Fees ###
+
+```python
+## Your trade fees
+>>> fees = api.fees()
+>>> fees[0].book
+u'btc_mxn'
+>>> fees[0].fee_percent
+Decimal('0.8500')
+
+```
+
+### Ledger ###
 ## Parameters
-## [offset = 0]    - Skip that many transactions before beginning to return results
-##                 - int
-## [limit = 100]   - Limit result to that many transactions
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                 - string
+## [limit = 25]   - Limit result to that many transactions
 ##                 - int
 ## [sort = 'desc'] - Sorting by datetime
 ##                 - string - 'asc' or
 ##                 - 'desc'
-## [book = btc_mxn]- Specifies which book to use
+
+```python
+## A ledger of your historic operations.
+## Parameters
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
 ##                 - string
->>> utx = api.user_transactions()
+## [limit = 25]   - Limit result to that many transactions
+##                 - int
+## [sort = 'desc'] - Sorting by datetime
+##                 - string - 'asc' or
+##                 - 'desc'
+
+>>> ledger = api.ledger()
+>>> ledger
+[<bitso.models.LedgerEntry at 0x10d4fdc50>,
+ <bitso.models.LedgerEntry at 0x10d4fd550>,
+ <bitso.models.LedgerEntry at 0x10d5c4d90>,
+ <bitso.models.LedgerEntry at 0x10d5c4bd0>,
+ <bitso.models.LedgerEntry at 0x10d5c4550>,
+ ...
+ ]
+>>> ledger[0].operation
+u'fee'
+>>> ledger[1].operation
+u'trade'
+>>> ledger[1].balance_updates
+[BalanceUpdate(currency=mxn, amount=25.21433520,
+BalanceUpdate(currency=btc, amount=-0.00797922]
+>>> ledger[1].balance_updates[0].amount
+Decimal('25.21433520')
+```
+
+### Withdrawals ###
+
+```python
+## Detailed info on your fund withdrawals.
+## Parameters
+## [wids]    - Specifies which withdrawal objects to return by IDs
+##                 - list
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                 - string
+## [limit = 25]   - Limit result to that many transactions
+##                 - int
+## [sort = 'desc'] - Sorting by datetime
+##                 - string - 'asc' or
+##                 - 'desc'
+
+>>> withdrawals = api.withdrawals()
+>>> withdrawals
+[Withdrawal(wid=019e8f42da7eb0e44bf5ce0013475058, amount=0.001, currency=btc),
+ Withdrawal(wid=efa28b88e326619d91ba809a82e1282b, amount=0.001, currency=btc),
+ Withdrawal(wid=9bbde562c7de3e0c5315993a944d3873, amount=0.001, currency=btc),
+ Withdrawal(wid=e19b33a5ec2606e8a25963ceea9d2254, amount=0.001, currency=btc),
+ Withdrawal(wid=b76af418eb94c61b72c6bb20d316e115, amount=0.001, currency=btc),
+ ...
+ ]
+>>> withdrawals[0].status
+u'pending'
+>>> withdrawals[0].method
+u'Bitcoin'
+>>> withdrawals[0].amount
+Decimal('0.001')
+```
+
+### Fundings ###
+
+```python
+## Detailed info on your fundings.
+## Parameters
+## [fids]    - Specifies which funding objects to return by IDs
+##                 - list
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                 - string
+## [limit = 25]   - Limit result to that many transactions
+##                 - int
+## [sort = 'desc'] - Sorting by datetime
+##                 - string - 'asc' or
+##                 - 'desc'
+
+>>> fundings = api. fundings()
+>>> fundings
+[Funding(fid=4e28aa988a74d8b9868f400a18d00910, amount=49596.65217865, currency=mxn),
+ Funding(fid=3799c39ea8f1ccf6e6bbcaea1a0cbed1, amount=8.12500000, currency=btc)]
+>>> fundings[0].status
+u'complete'
+>>> fundings[0].amount
+Decimal('49596.65217865')
+```
+
+
+
+
+### User Trades ###
+
+```python
+## Your trades
+## Parameters
+## [book = all]- Specifies which book to use
+##                 - string
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                 - string
+## [limit = 25]   - Limit result to that many transactions
+##                 - int
+## [sort = 'desc'] - Sorting by datetime
+##                 - string - 'asc' or
+##                 - 'desc'
+>>> trades = api.user_trades()
 >>> utx
-[UserTransaction(type=trade, created_datetime=2016-04-21 23:17:39),
- UserTransaction(type=trade, created_datetime=2016-04-21 23:11:39),
- UserTransaction(type=trade, created_datetime=2016-04-21 21:40:07),
- UserTransaction(type=trade, created_datetime=2016-04-21 21:35:31),
- UserTransaction(type=trade, created_datetime=2016-04-21 13:19:35),
+[UserTrade(tid=1610, book=btc_mxn, price=3160.00, major=-0.00797922, minor=25.21433520),
+ UserTrade(tid=1609, book=btc_mxn, price=3160.00, major=-0.01000000, minor=31.60000000),
+ UserTrade(tid=1608, book=btc_mxn, price=8000.00, major=0.00312500, minor=-25.00000000),
+ UserTrade(tid=1607, book=btc_mxn, price=8000.00, major=0.01008572, minor=-80.68576000),
  ...,
  ]
 
@@ -161,8 +306,16 @@ Decimal('7780.00')
 ```python
 ## Returns a list of the user’s open orders
 ## Parameters
-## [book = 'btc_mxn'] - Specifies which book to use
+## [book] - Specifies which book to use
 ##                    - str
+## [marker]    - Returns objects that are older or newer (depending on 'sort’) than the object with this ID
+##                 - string
+## [limit = 25]   - Limit result to that many transactions
+##                 - int
+## [sort = 'desc'] - Sorting by datetime
+##                 - string - 'asc' or
+##                 - 'desc'
+
 >>> oo = api.open_orders()
 >>> oo
 [Order(order_id=s5ntlud6oupippk8iigw5dazjdxwq5vibjcwdp32ksk9i4h0nyxsc8svlpscuov5, type=buy, price=7000.00, amount=0.01000000, created_datetime=2016-04-22 14:31:10)]
@@ -493,10 +646,29 @@ See [examples/livebookexample.py](https://github.com/bitsoex/bitso-py/blob/maste
 
 The wrapper uses models to represent data structures returned by the Bitso API. 
 
+### bitso.AvilableBook
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+book | String | Order book symbol | Major_Minor
+minimum_amount | Decimal | Minimum amount of major when placing orders | Major
+maximum_amount | Decimal | Maximum amount of major when placing orders | Major
+minimum_price | Decimal | Minimum price when placing orders	 | Minor
+maximum_price | Decimal | Maximum price when placing orders	 | Minor
+minimum_value | Decimal | Minimum value amount (amount*price) when placing orders		 | Minor
+maximum_value | Decimal | Maximum value amount (amount*price) when placing orders	 | Minor
+
+
+### bitso.AccountRequiredField
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+name | String | Field name that will be user for “account_creation” endpoint | 
+description | String | Describes each field | 
+
 
 ### bitso.Ticker
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
+book | String | Order book symbol | Major_Minor
 ask | Decimal | Lowest sell order | Minor/Major
 bid | Decimal | Highest buy order | Minor/Major
 last | Decimal | Last traded price | Minor/Major
@@ -504,8 +676,17 @@ high | Decimal | Last 24 hours price high | Minor/Major
 low | Decimal | Last 24 hours price low | Minor/Major
 vwap | Decimal | Last 24 hours price high | Minor/Major
 volume | Decimal | Last 24 hours volume | Major
-datetime | Datetime | Ticker current datetime | 
-timestamp | String | Ticker current timestamp | Unix timestamp
+created_at | Datetime | Ticker current datetime | 
+
+### bitso.PublicOrder
+
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+book | String | Order book symbol | Major_Minor
+price | Decimal | Price per unit of major | Minor
+amount | Decimal | Major amount in order | Major
+created_at | Datetime | The datetime at which the order was created |
+updated_at | Datetime | The datetime at which the order was updated (Can be None) |
 
 
 ### bitso.OrderBook
@@ -513,58 +694,111 @@ Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
 asks | List | List of open asks | Minor/Major
 bids | List | List of open bids | Minor/Major
-datetime | Datetime | OrderBook current datetime | 
-timestamp | String | OrderBook current timestamp | Unix timestamp
+created_at | Datetime | OrderBook current datetime | 
 
 
 ### bitso.Balance
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
-btc_balance | Decimal | BTC balance | BTC
-btc_available | Decimal | BTC available for trading (balance - reserved) | BTC
-btc_reserved | Decimal | BTC locked in open orders | BTC
-mxn_balance | Decimal | MXN balance | MXN
-mxn_available | Decimal | MXN available for trading (balance - reserved) | MXN
-mxn_reserved | Decimal | MXN locked in open orders | MXN
-fee | Decimal | Customer trading fee as a percentage | 
+currency | String | 	Currency symbol | 
+total | Decimal | Total balance for currency | Currency
+locked | Decimal | Currency balance locked in open orders | Currency
+available | Decimal | Currency balance available for use | Currency
 
 
-### bitso.Transaction
+### bitso.Fee
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
-tid | Long | Transaction ID | 
+book | String | Order book symbol | Major_Minor
+fee_decimal | Decimal | Customer trading fee as a decimal |
+fee_percent | Decimal | Customer trading fee as a percentage |
+
+
+
+### bitso.Trade
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+tid | Long | Trade ID | 
+book | String | Order book symbol | Major_Minor
 amount | Decimal | Major amount transacted | Major
 price | Decimal | Price per unit of major | Minor
-side | Decimal | Indicates the maker order side (maker order is the order that was open on the order book) | 
-datetime | Datetime | 
-timestamp | String | MXN balance | Unix timestamp
+side | String | Indicates the maker order side (maker order is the order that was open on the order book) | 
+created_at | Datetime | Datetime at which the trade was executed |
 
 
-### bitso.UserTransaction
+### bitso.Withdrawal
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
-tid | Long | Unique identifier (only for trades) | 
-type | String | Transaction type ('deposit', 'withdrawal', 'trade') |
-order_id | String | A 64 character long hexadecimal string representing the order that was fully or partially filled (only for trades) | 
-rate | Decimal | Price per minor (only for trades) | Minor
-created_datetime | Datetime | Date and time | 
-(minor currency code) | Decimal | The minor currency amount | Minor
-(major currency code) | Decimal | The major currency amount | Major 
+wid | String | Withdrawal ID | 
+currency | String | Currency withdrawn symbol | 
+method | String | Method for this withdrawal (MXN, BTC, ETH) | 
+amount | Decimal | The withdrawn amount | currency
+status | String | 	The status for this withdrawal (pending, complete, cancelled) | 
+created_at | Datetime | Datetime at which the withdrawal as created |
+details | Dict | 	Specific withdrawal details) | 
 
+
+
+### bitso.Funding
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+fid | String | Funding ID | 
+currency | String | Currency funding symbol | 
+method | String | Method for this funding (MXN, BTC, ETH) | 
+amount | Decimal | The funding amount | currency
+status | String | 	The status for this funding (pending, complete, cancelled) | 
+created_at | Datetime | Datetime at which the funding as recieved |
+details | Dict | 	Specific funding details | 
+
+
+### bitso.UserTrade
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+tid | Long | Trade ID | 
+oid | String | Users’ Order ID | 
+book | String | Order book symbol | Major_Minor
+side | String | Indicates the user’s side for this trade (buy, sell) | 
+created_at | Datetime | Datetime at which the trade was executed | 
+major | Decimal | Major amount traded | Major
+minor | Decimal | Minor amount traded | Minor
+price | Decimal | Price per unit of major | Minor
+fees_currency | String | 	Indicates the currency in which the trade fee was charged | 
+fees_amount | Decimal | Indicates the amount charged as trade fee | Major
+
+### bitso.LedgerEntry
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+eid | String | Entry ID	| 
+operation | String | Indicates type of operation (funding, withdrawal, trade, fee) | 
+created_at | Datetime | Timestamp at which the operation was recorded | 
+balance_updates | List | Updates to user balances for this operation | 
+details | Dict | Specific operation details | 
+
+### bitso.BalanceUpdate
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+currency | String | Currency for this balance update | 
+balance | Decimal | Amount added or subtracted to user balance | Currency
 
 ### bitso.Order
 
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
-order_id | String | The Order ID | 
-type | String | Order Type ('buy','sell') | 
-book | String | Which orderbook the order belongs to (not shown when status = 0) | 
-amount | Decimal | The order’s major currency amounts | Major
+oid | String | The Order ID | 
+book | String | Order book symbol | Major_Minor
+type | String | The order type (market, limit) | 
+side | String | The order side (buy, sell) | 
+status | String | The order’s status (open, partial-fill, closed)) | 
+created_at | Datetime | The date the order was created | 
+updated_at | Datetime | Timestamp at which the order was updated (can be None) | 
 price | Decimal | The order’s price | Minor
-status | String | The order’s status ('cancelled', 'active','partially filled', 'complete') | 
-created_datetime | Datetime | The date the order was created | 
-updated_datetime | Datetime | The date the order was last updated (not shown when status = 0) | 
+amount | Decimal | The order’s major currency amount | Major
 
+### bitso.FundingDestination
+Atribute | Type | Description | Units
+------------ | ------------- | ------------- | -------------
+account_identifier_name | String | Account identifier name to fund with the specified currency. | 
+account_identifier | String | Identifier to where the funds can be sent to | 
 
 ### bitso.TransactionQuote
 
@@ -577,7 +811,7 @@ rate | Decimal | This major/manor rate (e.g. BTC/MXN) |
 outlets | Dictionary | Dictionary of Bitso Outlet options | 
 created_at | Datetime | The date the quote was created | 
 expires_at | Datetime | The date the quote will expire | 
-success | Bool | quote generated successfully | 
+
 
 
 ### bitso.TransactionOrder
@@ -599,8 +833,8 @@ id | String | Transfer Order ID |
 payment_outlet_id | String | Payment Outlet ID | 
 qr_img_uri | String | Bitcoin payment QR Code URI | 
 user_uri | String | Transfer Order URI | 
-wallet_address | Bitcoin address you will send BTC to | 
-success | Bool | Response Success | 
+wallet_address | String | Bitcoin address you will send BTC to
+
 
 
 ### bitso.models.OrderUpdate
@@ -608,7 +842,6 @@ success | Bool | Response Success |
 Atribute | Type | Description | Units
 ------------ | ------------- | ------------- | -------------
 datetime | Datetime | Order Date/Time | 
-timestamp | String | Order Unix Timestamp | Milliseconds
 side | String | 'bid','ask' | Market side 
 rate | Decimal | Order price | Minor
 amount | Decimal | Major currency amount | Major

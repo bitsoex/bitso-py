@@ -26,6 +26,7 @@
 
 from decimal import Decimal
 from datetime import datetime
+import dateutil.parser
 
 
 class BaseModel(object):
@@ -43,6 +44,64 @@ class BaseModel(object):
         return cls(**data)
 
 
+class AvilableBook(BaseModel):
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'book': kwargs.get('book'),
+            'minimum_amount': Decimal(kwargs.get('minimum_amount')),
+            'maximum_amount': Decimal(kwargs.get('maximum_amount')),
+            'minimum_price': Decimal(kwargs.get('minimum_price')),
+            'maximum_price': Decimal(kwargs.get('maximum_price')),
+            'minimum_value': Decimal(kwargs.get('minimum_value')),
+            'maximum_value': Decimal(kwargs.get('maximum_value'))
+        }
+        
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+    def __repr__(self):
+        return "AvilableBook(book={book})".format(book=self.book)
+            
+
+
+class AccountStatus(BaseModel):
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'client_id': kwargs.get('client_id'),
+            'status': kwargs.get('status'),
+            'cellphone_number': kwargs.get('cellphone_number'),
+            'official_id': kwargs.get('official_id'),
+            'proof_of_residency': kwargs.get('proof_of_residency'),
+            'signed_contract': kwargs.get('signed_contract'),
+            'origin_of_funds': kwargs.get('origin_of_funds'),
+            'daily_limit': Decimal(kwargs.get('daily_limit')),
+            'monthly_limit': Decimal(kwargs.get('monthly_limit')),
+            'daily_remaining': Decimal(kwargs.get('daily_remaining')),
+            'monthly_remaining': Decimal(kwargs.get('monthly_remaining'))
+        }
+        
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+    def __repr__(self):
+        return "AccountStatus(client_id={client_id})".format(client_id=self.client_id)
+            
+    
+
+class AccountRequiredField(BaseModel):
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'name': kwargs.get('field_name'),
+            'description': kwargs.get('field_description'),
+        }
+        
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+    def __repr__(self):
+        return "AccountRequiredField(name={name})".format(name=self.name)
+
+
 
 class Ticker(BaseModel):
 
@@ -50,6 +109,7 @@ class Ticker(BaseModel):
     
     def __init__(self, **kwargs):
         self._default_params = {
+            'book': kwargs.get('book'),
             'ask': Decimal(kwargs.get('ask')),
             'bid': Decimal(kwargs.get('bid')),
             'high': Decimal(kwargs.get('high')),
@@ -57,25 +117,49 @@ class Ticker(BaseModel):
             'low': Decimal(kwargs.get('low')),
             'vwap': Decimal(kwargs.get('vwap')),
             'volume': Decimal(kwargs.get('volume')),
-            'timestamp': kwargs.get('timestamp'),
-            'datetime': datetime.fromtimestamp(int(kwargs.get('timestamp'))),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at'))
         }
         
         for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
-        return "Ticker(ask={ask}, bid={bid}, high={high}, last={last}, low={low}, datetime={datetime}, vwaplow={vwap})".format(
+        return "Ticker(book={book},ask={ask}, bid={bid}, high={high}, last={last}, low={low}, created_at={created_at}, vwaplow={vwap})".format(
+            book=self.book,
             ask=self.ask,
             bid=self.bid,
             high=self.high,
             low=self.low,
             last=self.last,
             vwap=self.vwap,
-            datetime=self.datetime)
+            created_at=self.created_at)
+
+class PublicOrder(BaseModel):
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'book': kwargs.get('book'),
+            'price': Decimal(kwargs.get('price')),
+            'amount': Decimal(kwargs.get('amount'))
+        }
+
+            
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+        if kwargs.get('oid'):
+            setattr(self, 'oid',  kwargs.get('oid'))
+        else:
+            setattr(self, 'oid',  None)
 
 
+    def __repr__(self):
+        return "PublicOrder(book={book},price={price}, amount={amount})".format(
+            book=self.book,
+            price=self.price,
+            amount=self.amount)
 
+
+            
 class OrderBook(BaseModel):
 
     """ A class that represents a Bitso order book. """
@@ -84,174 +168,263 @@ class OrderBook(BaseModel):
         self._default_params = {
             'asks': kwargs.get('asks'),
             'bids': kwargs.get('bids'),
-            'timestamp': kwargs.get('timestamp'),
-            'datetime': datetime.fromtimestamp(int(kwargs.get('timestamp')))
+            'updated_at': dateutil.parser.parse(kwargs.get('updated_at')),
+            'sequence': int(kwargs.get('sequence'))
         }
 
         for (param, val) in self._default_params.items():
             if param in ['asks', 'bids']:
-                parsed_asks = []
-                for ask in val:
-                    parsed_asks.append({'price': Decimal(ask[0]), 'amount': Decimal(ask[1])})
-                setattr(self, param, parsed_asks)
+                public_orders = []
+                for order in val:
+                    public_orders.append(PublicOrder._NewFromJsonDict(order))
+                setattr(self, param, public_orders)
                 continue
             setattr(self, param, val)
 
 
     def __repr__(self):
-        return "OrderBook({num_asks} asks, {num_bids} bids, timestamp={timestamp})".format(
+        return "OrderBook({num_asks} asks, {num_bids} bids, updated_at={updated_at})".format(
             num_asks=len(self.asks),
             num_bids=len(self.bids),
-            timestamp=self.timestamp)
+            updated_at=self.updated_at)
 
 
 
-   
-
+       
 
 class Balance(BaseModel):
         
-    """ A class that represents a Bitso user's balance. """
+    """ A class that represents a Bitso user's balance for a specifc currency. """
 
     
     def __init__(self, **kwargs):
+        
         self._default_params = {
-            'btc_available': Decimal(kwargs.get('btc_available')),            
-            'btc_balance': Decimal(kwargs.get('btc_balance')),
-            'btc_reserved': Decimal(kwargs.get('btc_reserved')),
-            'mxn_available': Decimal(kwargs.get('mxn_available')),
-            'mxn_balance': Decimal(kwargs.get('mxn_balance')),
-            'mxn_reserved': Decimal(kwargs.get('mxn_reserved')),
-            'fee': Decimal(kwargs.get('fee')),
+            'currency': kwargs.get('currency'),            
+            'total': Decimal(kwargs.get('total')),
+            'locked': Decimal(kwargs.get('locked')),
+            'available': Decimal(kwargs.get('available'))
         }
 
         for (param, val) in self._default_params.items():
             setattr(self, param, val)
             
     def __repr__(self):
-        return "Balance(btc_available={btc_available}, btc_balance={btc_balance}, btc_reserved={btc_reserved}, mxn_available={mxn_available}, mxn_balance={mxn_balance}, mxn_reserved={mxn_reserved}, fee={fee})".format(
-            btc_available=self.btc_available,
-            btc_balance=self.btc_balance,
-            btc_reserved=self.btc_reserved,
-            mxn_available=self.mxn_available,
-            mxn_balance=self.mxn_balance,
-            mxn_reserved=self.mxn_reserved,
-            fee=self.fee)
+        return "Balance(currency={currency}, total={total})".format(
+            currency=self.currency,
+            total=self.total)
+
+
+class Fee(BaseModel):
+        
+    """ A class that represents a Bitso user's fees for a specifc order book. """
+
+    
+    def __init__(self, **kwargs):
+        
+        self._default_params = {
+            'book': kwargs.get('book'),            
+            'fee_decimal': Decimal(kwargs.get('fee_decimal')),
+            'fee_percent': Decimal(kwargs.get('fee_percent'))
+        }
+
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+            
+    def __repr__(self):
+        return "Fees(book={book}, fee_percent={fee_percent})".format(
+            book=self.book,
+            fee_percent=self.fee_percent)
+
     
             
-class Transaction(BaseModel):
+class Trade(BaseModel):
 
-    """ A class that represents a Bitso public trade transaction. """
+    """ A class that represents a Bitso public trade. """
 
     
     def __init__(self, **kwargs):
         self._default_params = {
+            'book': kwargs.get('book'),
             'tid': kwargs.get('tid'),
             'amount': Decimal(kwargs.get('amount')),
             'price': Decimal(kwargs.get('price')),
-            'side': kwargs.get('side'),
-            'timestamp': kwargs.get('date'),
-            'datetime':  datetime.fromtimestamp(int(kwargs.get('date')))
-
-            
+            'maker_side': kwargs.get('maker_side'),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at'))
         }
 
         for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
-        return "Transaction(tid={tid}, price={price}, amount={amount}, side={side}, datetime={datetime})".format(
+        return "Trade(tid={tid}, price={price}, amount={amount}, maker_side={maker_side}, created_at={created_at})".format(
             tid=self.tid,
             price=self.price,
             amount=self.amount,
-            side=self.side,
-            datetime=self.datetime)
+            maker_side=self.maker_side,
+            created_at=self.created_at)
 
-   
-            
-class UserTransaction(BaseModel):
+class Withdrawal(BaseModel):
 
-    """ A class that represents a transaction for a Bitso user. """
-
-        
+    """ A class that represents a User Withdrawal """
+    
     def __init__(self, **kwargs):
-        self._type_mappings = {
-            0: 'deposit',
-            1: 'withdrawal',
-            2: 'trade'
+        self._default_params = {
+            'wid': kwargs.get('wid'),
+            'status': kwargs.get('status'),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at')),
+            'currency': kwargs.get('currency'),
+            'method': kwargs.get('method'),
+            'amount': Decimal(kwargs.get('amount')),
+            'details': kwargs.get('details')
         }
 
-        for (param, value) in kwargs.items():
-            if param == 'id':
-                param = 'tid'
-            elif param == 'type':
-                value = self._type_mappings.get(value,value)
-            elif param == 'datetime':
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-                param = 'created_datetime'
-            elif param in ('btc', 'mxn', 'rate', 'btc_mxn'):
-                value = Decimal(value)
-            setattr(self, param, value)
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
 
     def __repr__(self):
-        return "UserTransaction(type={tx_type}, created_datetime={created_datetime})".format(
-            tx_type=self.type,
-            created_datetime=self.created_datetime)
+        return "Withdrawal(wid={wid}, amount={amount}, currency={currency})".format(
+            wid=self.wid,
+            amount=self.amount,
+            currency=self.currency)
+
+class Funding(BaseModel):
+
+    """ A class that represents a User Funding """
+    
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'fid': kwargs.get('fid'),
+            'status': kwargs.get('status'),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at')),
+            'currency': kwargs.get('currency'),
+            'method': kwargs.get('method'),
+            'amount': Decimal(kwargs.get('amount')),
+            'details': kwargs.get('details')
+        }
+
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+    def __repr__(self):
+        return "Funding(fid={fid}, amount={amount}, currency={currency})".format(
+            fid=self.fid,
+            amount=self.amount,
+            currency=self.currency)
+       
+           
+            
+class UserTrade(BaseModel):
+
+    """ A class that represents a trade for a Bitso user. """
+
+    def __init__(self, **kwargs):
+        self._default_params = {
+            'book': kwargs.get('book'),
+            'tid': kwargs.get('tid'),
+            'oid': kwargs.get('oid'),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at')),
+            'major': Decimal(kwargs.get('major')),
+            'minor': Decimal(kwargs.get('minor')),
+            'price': Decimal(kwargs.get('price')),
+            'fees_amount': Decimal(kwargs.get('fees_amount')),
+            'fees_currency': kwargs.get('fees_currency'),
+            'side': kwargs.get('side')
+        }
+
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
+
+    def __repr__(self):
+        return "UserTrade(tid={tid}, book={book}, price={price}, major={major}, minor={minor})".format(
+            tid=self.tid,
+            book=self.book,
+            price=self.price,
+            major=self.major,
+            minor=self.minor)
+       
 
 
 
+class LedgerEntry(BaseModel):
+    """A class that represents a Bitso Ledger entry."""
+    def __init__(self, **kwargs):
+        for (param, value) in kwargs.items():
+            if param == 'created_at':
+                value = dateutil.parser.parse(value)
+            if param == 'balance_updates':
+                value = [BalanceUpdate._NewFromJsonDict(item) for item in value]
+            setattr(self, param, value)
+        
+
+
+class BalanceUpdate(BaseModel):
+    """A class that represents a Bitso Balance Update"""
+    def __init__(self, **kwargs):
+        for (param, value) in kwargs.items():
+            if param == 'amount':
+                value = Decimal(value)
+            setattr(self, param, value)
+    
+    def __repr__(self):
+        return "BalanceUpdate(currency={currency}, amount={amount}".format(
+            currency=self.currency,
+            amount=self.amount)
 
 class Order(BaseModel):
 
     """ A class that represents a Bitso order. """
-
-        
+ 
     def __init__(self, **kwargs):
-        self._status_mappings = {
-            '-1': 'cancelled',
-            '0': 'active',
-            '1': 'partial',
-            '2': 'complete'
+        self._default_params = {
+            'book': kwargs.get('book'),
+            'oid': kwargs.get('oid'),
+            'created_at': dateutil.parser.parse(kwargs.get('created_at')),
+            'updated_at': kwargs.get('updated_at'),
+            'original_amount': kwargs.get('original_amount'),
+            'unfilled_amount': Decimal(kwargs.get('unfilled_amount')),
+            'price': Decimal(kwargs.get('price')),
+            'side': kwargs.get('side'),
+            'status': kwargs.get('status'),
+            'type': kwargs.get('type')
         }
-        
-        self._type_mappings = {
-            '0': 'buy',
-            '1': 'sell'
-        }
+        for (param, val) in self._default_params.items():
+            setattr(self, param, val)
 
-        for (param, value) in kwargs.items():
-            if param == 'datetime':
-                param = 'created_datetime'
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            elif param in ['created', 'updated']:
-                param = param + '_datetime'
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            elif param == 'id':
-                param = 'order_id'
-            elif param == 'status':
-                value = self._status_mappings.get(value,value)
-            elif param == 'type':
-                value = self._type_mappings.get(value,value)
-            elif param == 'price':
-                if Decimal(value) == 0.0:
-                    value = None
-                else:
-                    value = Decimal(value)
-            elif param == 'amount':
-                value = Decimal(value)
-            setattr(self, param, value)
-            
+            setattr(self, 'updated_at',  dateutil.parser.parse(kwargs.get('updated_at')))
+
+        if kwargs.get('original_amount') != None:
+            setattr(self, 'original_amount',  Decimal(kwargs.get('original_amount')))
+        if kwargs.get('original_value') != None:
+            setattr(self, 'original_value',  Decimal(kwargs.get('original_value')))        
+        if kwargs.get('updated_at') != None:
+            setattr(self, 'updated_at',  dateutil.parser.parse(kwargs.get('updated_at')))
+
+
+
+    
+
+
     def __repr__(self):
-        return "Order(order_id={order_id}, type={order_type}, price={price}, amount={amount}, created_datetime={created_datetime})".format(
-            order_id=self.order_id,
-            order_type=self.type,
+        return "Order(oid={oid}, type={type}, price={price}, original_amount={original_amount})".format(
+            oid=self.oid,
+            type=self.type,
             price=self.price,
-            amount=self.amount,
-            created_datetime=self.created_datetime)
+            original_amount=self.original_amount)
 
 
 
+class FundingDestination(BaseModel):
+    """A class that represents a Bitso Funding Destination"""
+    def __init__(self, **kwargs):
+        for (param, value) in kwargs.items():
+            setattr(self, param, value)
 
+    def __repr__(self):
+        return "FundingDestination(account_identifier_name={account_identifier_name})".format(
+            account_identifier_name=self.account_identifier_name)
+
+    
 class OutletDictionary(dict):
     
     """ A Dictionary subclass to represet Bitso Transfer Outlets with parsed decimals. """
@@ -283,15 +456,15 @@ class TransactionQuote(BaseModel):
 
         
     def __init__(self, **kwargs):
-        setattr(self, 'success', kwargs['success'])
 
-        for (param, value) in kwargs['quote'].items():
+        for (param, value) in kwargs.items():
             if param=='outlets':
                 setattr(self, param, OutletDictionary(value))
             else:
                 setattr(self, param, value)
-        setattr(self, 'created_at', datetime.fromtimestamp(int(kwargs['quote'].get('timestamp'))))
-        setattr(self, 'expires_at', datetime.fromtimestamp(int(kwargs['quote'].get('expires_epoch'))))
+
+        setattr(self, 'created_at', dateutil.parser.parse(kwargs.get('created_at')))
+        setattr(self, 'expires_at', dateutil.parser.parse(kwargs.get('expires_at')))
 
         
         setattr(self, 'btc_amount', Decimal(self.btc_amount))
@@ -318,12 +491,12 @@ class TransactionOrder(BaseModel):
         
     def __init__(self, **kwargs):
         setattr(self, 'btc_amount', None)
-        setattr(self, 'success', kwargs['success'])
 
-        for (param, value) in kwargs['order'].items():
+
+        for (param, value) in kwargs.items():
             setattr(self, param, value)
-        setattr(self, 'created_at', datetime.fromtimestamp(int(kwargs['order'].get('created_at'))))
-        setattr(self, 'expires_at', datetime.fromtimestamp(int(kwargs['order'].get('expires_epoch'))))
+        #setattr(self, 'created_at', dateutil.parser.parse(kwargs.get('created_at')))
+        setattr(self, 'expires_at', dateutil.parser.parse(kwargs.get('expires_at')))
         if self.btc_amount:
             setattr(self, 'btc_amount', Decimal(self.btc_amount))
         if self.btc_pending:
