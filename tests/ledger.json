@@ -1,0 +1,107 @@
+        {
+            "success": true,
+            "payload": [{
+                "eid": "c4ca4238a0b923820dcc509a6f75849b",
+                "operation": "trade",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "btc",
+                    "amount": "-0.25232073"
+                }, {
+                    "currency": "mxn",
+                    "amount": "1013.540958479115"
+                }],
+                "details": {
+                    "tid": 51756,
+                    "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk"
+                }
+            }, {
+                "eid": "6512bd43d9caa6e02c990b0a82652dca",
+                "operation": "fee",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "mxn",
+                    "amount": "-10.237787459385"
+                }],
+                "details": {
+                    "tid": 51756,
+                    "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk"
+                }
+            }, {
+                "operation": "trade",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "eth",
+                    "amount": "4.86859395"
+                }, {
+                    "currency": "mxn",
+                    "amount": "-626.77"
+                }],
+                "details": {
+                    "tid": 51757,
+                    "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk"
+                }
+            }, {
+                "eid": "698d51a19d8a121ce581499d7b701668",
+                "operation": "fee",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "eth",
+                    "amount": "0.04917771"
+                }],
+                "details": {
+                    "tid": 51757,
+                    "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk"
+                }
+            }, {
+                "eid": "b59c67bf196a4758191e42f76670ceba",
+                "operation": "funding",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "btc",
+                    "amount": "0.48650929"
+                }],
+                "details": {
+                    "fid": "fc23c28a23905d8614499816c3ade455",
+                    "method": "Bitcoin",
+                    "funding_address": "18MsnATiNiKLqUHDTRKjurwMg7inCrdNEp"
+                }
+            }, {
+                "eid": "b0baee9d279d34fa1dfd71aadb908c3f",
+                "operation": "funding",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "mxn",
+                    "amount": "300.15"
+                }],
+                "details": {
+                    "fid": "3ef729ccf0cc56079ca546d58083dc12",
+                    "method": "SPEI Transfer",
+                    "sender_name": "MANUEL OROZCO Y BERRA",
+                    "sender_bank": "BBVA Bancomer",
+                    "sender_clabe": "012610001967722183",
+                    "numeric_reference": "80416",
+                    "concepto": "Para el regalo",
+                    "clave_rastreo": "BNET01001604080002076841"
+                }
+
+            }, {
+                "eid": "96e79218965eb72c92a549dd5a330112",
+                "operation": "withdrawal",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "balance_updates": [{
+                    "currency": "mxn",
+                    "amount": "-200.15"
+                }],
+                "details": {
+                    "wid": "c5b8d7f0768ee91d3b33bee648318688",
+                    "method": "SPEI Transfer",
+                    "beneficiary_name": "DANIEL COSIO VILLEGAS",
+                    "beneficiary_bank": "BANAMEX",
+                    "beneficiary_clabe": "5204165009315197",
+                    "numeric_reference": "99548",
+                    "concepto": "Por los tacos del viernes",
+                    "clave_rastreo": "BNET01001604080002076841"
+                }
+            }]
+        }

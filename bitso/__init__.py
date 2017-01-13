@@ -29,12 +29,20 @@ from .errors import (ApiError, ApiClientError)
 from .models import (
     Ticker,
     OrderBook,
-    Balance, 
-    Transaction,
-    UserTransaction,
+    Balance,
+    Fee,
+    Trade,
+    UserTrade,
     Order,
     TransactionQuote,
-    TransactionOrder
+    TransactionOrder,
+    LedgerEntry,
+    BalanceUpdate,
+    FundingDestination,
+    Withdrawal,
+    Funding,
+    AvilableBook,
+    AccountStatus
 )
 
 from .api import Api

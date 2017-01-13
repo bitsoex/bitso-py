@@ -34,6 +34,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import bitso
 
 from decimal import Decimal
+import datetime
 
 class FakeResponse(requests.Response):
     def __init__(self, content='', status_code=200):
@@ -47,112 +48,114 @@ class PublicApiTest(unittest.TestCase):
         self.api = bitso.Api()
 
     def test_bad_response(self):
-        response = FakeResponse(b'''{"error": "something went wrong"}''')
+        response = FakeResponse(b"""{"success": false, "error": "something went wrong"}""")
         with mock.patch('requests.get', return_value=response):
             self.assertRaises(
-                bitso.ApiError, self.api.ticker)
-
-    def test_404_response(self):
-        response = FakeResponse(status_code=404)
-        with mock.patch('requests.get', return_value=response):
-            self.assertRaises(bitso.ApiError, self.api.ticker)
-
-    def test_500_response(self):
-        response = FakeResponse(status_code=500)
-        with mock.patch('requests.get', return_value=response):
-            self.assertRaises(bitso.ApiError, self.api.ticker)
+                bitso.ApiError, self.api.ticker, "btc_mxn")
 
     def test_ticker(self):
-        response = FakeResponse(b'''
-            {"volume": "22.31349615",
+        response = FakeResponse(b"""
+        {
+        "success": true,
+        "payload": {
+            "book": "btc_mxn",
+            "volume": "22.31349615",
             "high": "5750.00",
             "last": "5633.98",
             "low": "5450.00",
             "vwap": "5393.45",
             "ask": "5632.24",
             "bid": "5520.01",
-            "timestamp": "1447348096"
-        }''')
+            "created_at": "2016-04-08T17:52:31.000+00:00"
+            }
+        }
+            """)
         with mock.patch('requests.get', return_value=response):
             ticker = self.api.ticker('btc_mxn')
         self.assertIsInstance(ticker, bitso.Ticker)
 
 
 
-    def test_order_book_ungrouped(self):
-        with open('tests/order_book_ungrouped.json') as data_file:   
-            response = FakeResponse(data_file.read().replace('\n', ''))
-        with mock.patch('requests.get', return_value=response):
-            result = self.api.order_book(group=False)
-        self.assertIsInstance(result, bitso.OrderBook)
-        self.assertIsInstance(result.asks, list)
-        self.assertEqual(len(result.asks), 399)
-        self.assertIsInstance(result.bids, list)
-        self.assertEqual(len(result.bids), 318)
-        self.assertEqual(result.asks[0]['price'], Decimal("10859.05"))
-        self.assertEqual(result.asks[0]['amount'], Decimal("2.55631938"))
-        self.assertEqual(result.bids[0]['price'], Decimal("10810.80"))
-        self.assertEqual(result.bids[0]['amount'], Decimal("0.00138759"))
-
-        
-                            
-    def test_order_book_grouped(self):
-        response = FakeResponse(b'''
-            {"asks": [
-               ["5632.24", "1.34491802"],
-               ["5632.25", "1.00000000"],
-               ["5633.99", "0.61980799"]
-            ],
-            "bids": [
-               ["5520.01", "0.34493053"],
-               ["5520.00", "0.08000000"],
-               ["5486.01", "0.00250000"]
-            ],
-            "timestamp": "1447348416"}''')
-        with mock.patch('requests.get', return_value=response):
-            result = self.api.order_book(group=True)
-        self.assertIsInstance(result, bitso.OrderBook)
-        self.assertIsInstance(result.asks, list)
-        self.assertEqual(len(result.asks), 3)
-        self.assertIsInstance(result.bids, list)
-        self.assertEqual(len(result.bids), 3)
-        self.assertEqual(result.asks[0]['price'], Decimal("5632.24"))
-        self.assertEqual(result.asks[0]['amount'], Decimal("1.34491802"))
-        self.assertEqual(result.bids[0]['price'], Decimal("5520.01"))
-        self.assertEqual(result.bids[0]['amount'], Decimal("0.34493053"))
-
-
-        
-    def test_transactions(self):
-        response = FakeResponse(b'''
-        [
-           {
-               "date": "1447350465",
-               "amount": "0.02000000",
-               "side": "buy",
-               "price": "5545.01",
-               "tid": 55845
-            },
-            {
-               "date": "1447347533",
-               "amount": "0.33723939",
-               "side": "sell",
-               "price": "5633.98",
-               "tid": 55844
+    def test_order_book(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "asks": [{
+                    "book": "btc_mxn",
+                    "price": "5632.24",
+                    "amount": "1.34491802",
+                    "created_at": "2016-04-08T17:52:31.000+00:00",
+                    "updated_at": null
+                }],
+                "bids": [{
+                    "book": "btc_mxn",
+                    "price": "6123.55",
+                    "amount": "1.12560000",
+                    "created_at": "2016-04-08T17:52:31.000+00:00",
+                    "updated_at": null
+                },{
+                    "book": "btc_mxn",
+                    "price": "6122.55",
+                    "amount": "1.02560000",
+                    "created_at": "2016-04-08T17:52:30.000+00:00",
+                    "updated_at": null
+                }],
+                "created_at": "2016-04-08T17:52:31.000+00:00"
             }
-        ]''')
+        }
+            """)
         with mock.patch('requests.get', return_value=response):
-            txs = self.api.transactions(book='btc_mxn', time='hour')
+            result = self.api.order_book('btc_mxn')
+        self.assertIsInstance(result, bitso.OrderBook)
+        self.assertIsInstance(result.asks, list)
+        self.assertEqual(len(result.asks), 1)
+        self.assertIsInstance(result.bids, list)
+        self.assertEqual(len(result.bids), 2)
+        self.assertEqual(result.asks[0].price, Decimal("5632.24"))
+        self.assertEqual(result.asks[0].amount, Decimal("1.34491802"))
+        self.assertEqual(result.bids[0].price, Decimal("6123.55"))
+        self.assertEqual(result.bids[0].amount, Decimal("1.12560000"))
+
+        
+        
+    def test_trades(self):
+        response = FakeResponse(b"""
+        {
+        "success": true,
+        "payload": [{
+           "book": "btc_mxn",
+           "created_at": "2016-04-08T17:52:31.000+00:00",
+           "amount": "0.02000000",
+           "side": "buy",
+           "price": "5545.01",
+           "tid": 55845
+        }, {
+           "book": "btc_mxn",
+           "created_at": "2016-04-08T17:52:31.000+00:00",
+           "amount": "0.33723939",
+           "side": "sell",
+           "price": "5633.98",
+           "tid": 55844
+           }]
+       }
+        """)
+        with mock.patch('requests.get', return_value=response):
+            txs = self.api.trades(book='btc_mxn', time='hour')
         self.assertIsInstance(txs, list)
         self.assertEqual(len(txs), 2)
         self.assertEqual(txs[0].price, Decimal("5545.01"))
-        self.assertEqual(txs[0].timestamp, "1447350465")
+        self.assertEqual(txs[0].created_at.year, 2016)
+        self.assertEqual(txs[0].created_at.month, 4)
+        self.assertEqual(txs[0].created_at.day, 8)
+        self.assertEqual(txs[0].created_at.hour, 17)
+        self.assertEqual(txs[0].created_at.minute, 52)
 
 
           
-    def test_transactions_time_fail(self):
+    def test_trades_time_fail(self):
         self.assertRaises(bitso.ApiClientError,
-                          self.api.transactions, 'btc_mxn', 'hours')
+                          self.api.trades, 'btc_mxn', 'hours')
 
 
     
@@ -165,208 +168,406 @@ class PrivateApiTest(unittest.TestCase):
 
 
     def test_account_balance(self):
-        response = FakeResponse(b'''
-        {"btc_available": "46.67902107",
-         "fee": "1.0000",
-         "mxn_available": "26864.57",
-         "btc_balance": "46.67902107",
-         "mxn_reserved": "0.00",
-         "mxn_balance": "26864.57",
-         "btc_reserved": "0.00000000"}''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.balance()
-        print result
-        self.assertIsInstance(result, bitso.Balance)
-        self.assertEqual(result.btc_available, Decimal("46.67902107"))
-        self.assertEqual(result.mxn_available, Decimal("26864.57"))
-        self.assertEqual(result.fee, Decimal("1.0"))
-    
-
-    def test_user_transactions(self):
-        response = FakeResponse(b'''
-        [
-           {
-              "datetime": "2015-10-10 16:19:33",
-              "method": "Bitcoin",
-              "btc": "0.48650929",
-              "type": 0
-            },
-            {
-              "datetime": "2015-10-09 13:49:00",
-              "method": "SPEI Transfer",
-              "mxn": "-1800.15",
-              "type": 1
-            },
-            {
-              "btc": "-0.25232073",
-              "datetime": "2015-10-09 13:45:46",
-              "mxn": "1023.77",
-              "rate": "4057.45",
-              "id": 51756,
-              "type": 2,
-              "order_id": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk"
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "balances": [{
+                    "currency": "mxn",
+                    "total": "100.1234",
+                    "locked": "25.1234",
+                    "available": "75.0000"
+                }, {
+                    "currency": "btc",
+                    "total": "4.12345678",
+                    "locked": "25.00000000",
+                    "available": "75.12345678"
+                }, {
+                    "currency": "cop",
+                    "total": "500000.1234",
+                    "locked": "40000.1234",
+                    "available": "10000.0000"
+                }]
             }
-        ] ''')
-        with mock.patch('requests.post', return_value=response):
-            txs = self.api.user_transactions(sort='desc')
-        print txs
-        self.assertIsInstance(txs, list)
-        self.assertEqual(len(txs), 3)
-        self.assertEqual(txs[0].btc, Decimal("0.48650929"))
-        self.assertEqual(txs[0].type, 'deposit')
-        self.assertEqual(txs[1].mxn, Decimal("-1800.15"))
-        self.assertEqual(txs[1].method, "SPEI Transfer")
-        self.assertEqual(txs[1].type, 'withdrawal')
-        self.assertEqual(txs[2].rate, Decimal("4057.45"))
-        self.assertEqual(txs[2].type, 'trade')
-        self.assertEqual(txs[2].order_id,
-                        "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk")
+        }
+        """)
+        with mock.patch('requests.get', return_value=response):
+            result = self.api.balance()
+        self.assertIsInstance(result, list)
+        self.assertIsInstance(result[0], bitso.Balance)
+        self.assertIsInstance(result[1], bitso.Balance)
+        self.assertIsInstance(result[2], bitso.Balance)
+        self.assertEqual(result[0].available, Decimal("75.0000"))
+        self.assertEqual(result[1].available, Decimal("75.12345678"))
+        self.assertEqual(result[0].locked, Decimal("25.1234"))
+        self.assertEqual(result[0].currency, "mxn")
+    
 
+    def test_fees(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "fees": [{
+                    "book": "mxn_btc",
+                    "fee_decimal": "0.0001",
+                    "fee_percent": "0.01"
+                }, {
+                    "book": "mxn_eth",
+                    "fee_decimal": "0.001",
+                    "fee_percent": "0.1"
+                }, {
+                    "book": "cop_btc",
+                    "fee_decimal": "0.01",
+                    "fee_percent": "1"
+                }]
+            }
+        }
+        """)
+        with mock.patch('requests.get', return_value=response):
+            result = self.api.fees()
+        self.assertIsInstance(result, list)
+        self.assertIsInstance(result[0], bitso.Fee)
+        self.assertIsInstance(result[1], bitso.Fee)
+        self.assertIsInstance(result[2], bitso.Fee)
+        self.assertEqual(result[0].book, "mxn_btc")
+        self.assertEqual(result[0].fee_decimal, Decimal("0.0001"))
+        self.assertEqual(result[0].fee_percent, Decimal("0.01"))
 
     
-    def test_user_transactions_fail(self):
+    def test_ledger(self):
+        with open('tests/ledger.json') as data_file:   
+            response = FakeResponse(data_file.read().replace('\n', ''))
+        with mock.patch('requests.get', return_value=response):
+            result = self.api.ledger()
+        for item in result:
+            for bu in item.balance_updates:
+                self.assertIsInstance(bu, bitso.BalanceUpdate)
+                self.assertIsInstance(bu.amount, Decimal)
+            self.assertIsInstance(item.created_at, datetime.datetime)
+        
+        
+    def test_user_trades(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": [{
+                "book": "btc_mxn",
+                "major": "-0.25232073",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "minor": "1013.540958479115",
+                "fees_amount": "-10.237787459385",
+                "fees_currency": "mxn",
+                "price": "4057.45",
+                "tid": 51756,
+                "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk",
+                "side": "sell"
+            }, {
+                "book": "eth_mxn",
+                "major": "4.86859395",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "minor": "-626.77",
+                "fees_amount": "-0.04917771",
+                "fees_currency": "eth",
+                "price": "127.45",
+                "tid": 51757,
+                "oid": "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk",
+                "side": "buy"
+            }]
+        }        
+            """)
+        with mock.patch('requests.get', return_value=response):
+            trades = self.api.user_trades('btc_mxn', sort='desc')
+        self.assertIsInstance(trades, list)
+        self.assertEqual(len(trades), 2)
+        self.assertEqual(trades[0].major, Decimal("-0.25232073"))
+        self.assertEqual(trades[0].minor, Decimal("1013.540958479115"))
+        self.assertEqual(trades[0].book, "btc_mxn")
+        self.assertEqual(trades[0].tid, 51756)
+        self.assertEqual(trades[0].oid, "19vaqiv72drbphig81d3y1ywri0yg8miihs80ng217drpw7xyl0wmytdhtby2ygk")
+        self.assertEqual(trades[0].price, Decimal("4057.45"))
+        self.assertEqual(trades[0].side, "sell")
+        self.assertIsInstance(trades[0].created_at,datetime.datetime)
+
+    
+    def test_user_trades_fail(self):
         self.assertRaises(bitso.ApiClientError,
-                          self.api.user_transactions, sort='dec')
+                          self.api.user_trades, "btc_mxn", sort='dec')
 
 
     
 
         
     def test_open_orders(self):
-        response = FakeResponse(b'''
-        [
-           {
-              "amount": "0.01000000",
-              "datetime": "2015-11-12 12:37:01",
-              "price": "5600.00",
-              "id": "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
-              "type": "1",
-              "status": "1"
-           },
-           {
-              "amount": "0.12680000",
-              "datetime": "2015-11-12 12:33:47",
-              "price": "4000.00",
-              "id": "qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1",
-              "type": "0",
-              "status": "0"
-           },
-           {
-              "amount": "1.12560000",
-              "datetime": "2015-11-12 12:33:23",
-              "price": "6123.55",
-              "id": "d71e3xy2lowndkfmde6bwkdsvw62my6058e95cbr08eesu0687i5swyot4rf2yf8",
-              "type": "1",
-              "status": "0"
+        response = FakeResponse(b"""
+            {
+                "success": true,
+                "payload": [{
+                    "book": "btc_mxn",
+                    "amount": "0.01000000",
+                    "created_at": "2016-04-08T17:52:31.000+00:00",
+                    "updated_at": "2016-04-08T17:52:51.000+00:00",
+                    "price": "5600.00",
+                    "oid": "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
+                    "side": "buy",
+                    "status": "partial-fill",
+                    "type": "limit"
+                }, {
+                    "book": "btc_mxn",
+                    "amount": "0.12680000",
+                    "created_at": "2016-04-08T17:52:31.000+00:00",
+                    "updated_at": "2016-04-08T17:52:41.000+00:00",
+                    "price": "4000.00",
+                    "oid": "qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1",
+                    "side": "sell",
+                    "status": "open",
+                    "type": "limit"
+                }, {
+                    "book": "btc_mxn",
+                    "amount": "1.12560000",
+                    "created_at": "2016-04-08T17:52:31.000+00:00",
+                    "updated_at": "2016-04-08T17:52:41.000+00:00",
+                    "price": "6123.55",
+                    "oid": "d71e3xy2lowndkfmde6bwkdsvw62my6058e95cbr08eesu0687i5swyot4rf2yf8",
+                    "side": "sell",
+                    "status": "open",
+                    "type": "limit"
+                }]
             }
-        ] ''')
-        with mock.patch('requests.post', return_value=response):
+         """)
+        with mock.patch('requests.get', return_value=response):
             result = self.api.open_orders()
-        print result
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0].amount, Decimal("0.01000000"))
-        self.assertEqual(result[0].type, 'sell')
-        self.assertEqual(result[0].status, 'partial')
-        self.assertEqual(result[1].type, 'buy')
-        self.assertEqual(result[1].status, 'active')
+        self.assertEqual(result[0].price, Decimal("5600.00"))
+        self.assertEqual(result[0].type, 'limit')
+        self.assertEqual(result[0].side, 'buy')
+        self.assertEqual(result[0].status, 'partial-fill')
+        self.assertEqual(result[0].oid, '543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v')
+        self.assertIsInstance(result[0].created_at,datetime.datetime)
+        self.assertIsInstance(result[0].updated_at,datetime.datetime)
+        self.assertEqual(result[1].status, 'open')
         self.assertEqual(result[1].price, Decimal("4000"))
-        self.assertEqual(result[2].type, 'sell')
-        self.assertEqual(result[2].status, 'active')
-        self.assertEqual(result[2].price, Decimal("6123.55"))
 
 
     def test_lookup_order(self):
-        response = FakeResponse(b'''
-        [{"status": "0", "created": "2016-08-30 18:05:12", "price": "15801.23", "amount": "0.01000000", "book": "btc_mxn", "type": "1", "id": "X45g3MhXJpVcpl7VsM25l5Mkv7nhJO5rOvf8lnqnso9nOOXir7vrR5mcld587sMo"}]''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.lookup_order('X45g3MhXJpVcpl7VsM25l5Mkv7nhJO5rOvf7lnqnso9nOOXir7vrR5mcld587sMo')
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": [{
+                "book": "btc_mxn",
+                "amount": "0.01000000",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "updated_at": "2016-04-08T17:52:51.000+00:00",
+                "price": "5600.00",
+                "oid": "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
+                "side": "buy",
+                "status": "partial-fill",
+                "type": "limit"
+            }, {
+                "book": "btc_mxn",
+                "amount": "0.12680000",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "updated_at": "2016-04-08T17:58:31.000+00:00",
+                "price": "4000.00",
+                "oid": "qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1",
+                "side": "sell",
+                "status": "open",
+                "type": "limit"
+
+            }, {
+                "book": "btc_mxn",
+                "amount": "1.12560000",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "updated_at": "2016-04-08T17:53:31.000+00:00",
+                "price": "6123.55",
+                "oid": "d71e3xy2lowndkfmde6bwkdsvw62my6058e95cbr08eesu0687i5swyot4rf2yf8",
+                "side": "sell",
+                "status": "open",
+                "type": "limit"
+            }]
+        }
+        """)
+        
+        with mock.patch('requests.get', return_value=response):
+            result = self.api.lookup_order(['543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v','qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1'])
 
         self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].type, 'sell')
-        self.assertEqual(result[0].price, Decimal('15801.23'))
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0].type, 'limit')
+        self.assertEqual(result[0].price, Decimal('5600.00'))
         self.assertEqual(result[0].amount, Decimal('0.01000000'))
     
     def test_cancel_order(self):
-        response = FakeResponse(b'''"true"''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.cancel_order('X45g3MhXJpVcpl7VsM25l5Mkv7nhJO5rOvf7lnqnso9nOOXir7vrR5mcld587sMo')
-        self.assertEqual(result, 'true')
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload":[
+                "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
+                "qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1",
+                "d71e3xy2lowndkfmde6bwkdsvw62my6058e95cbr08eesu0687i5swyot4rf2yf8"
+                ]
+        }
+        """)
+        with mock.patch('requests.delete', return_value=response):
+            result = self.api.cancel_order(["543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v","qlbga6b600n3xta7actori10z19acfb20njbtuhtu5xry7z8jswbaycazlkc0wf1","d71e3xy2lowndkfmde6bwkdsvw62my6058e95cbr08eesu0687i5swyot4rf2yf8"])
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 3)
+        
 
-    def test_btc_deposit_address(self):
-        response = FakeResponse(b'''"3Kejck1J6aKSMZs3fSfbpb5szieJ6RA9rj"''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.btc_deposit_address()
-        self.assertEqual(result, '3Kejck1J6aKSMZs3fSfbpb5szieJ6RA9rj')
-
+    def test_funding_destination(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "account_identifier_name": "SPEI CLABE",
+                "account_identifier": "646180115400346012"             
+            }
+        }   
+        """)
+        with mock.patch('requests.get', return_value=response):
+            result = self.api.funding_destination('mxn')
+        self.assertIsInstance(result, bitso.FundingDestination)
+        self.assertEqual(result.account_identifier_name, "SPEI CLABE")
+        self.assertEqual(result.account_identifier, "646180115400346012")
+        
 
     def test_btc_withdrawal(self):
-        response = FakeResponse(b'''"ok"''')
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "wid": "c5b8d7f0768ee91d3b33bee648318688",
+                "status": "pending",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "currency": "btc",
+                "method": "Bitcoin",
+                "amount": "0.48650929",
+                "details": {
+                    "withdrawal_address": "3EW92Ajg6sMT4hxK8ngEc7Ehrqkr9RoDt7",
+                    "tx_hash": null
+                }
+            }
+        }
+        """)
         with mock.patch('requests.post', return_value=response):
-            result = self.api.btc_withdrawal('.01','1Hnv5fFaWUTChfBHPizfeNjGvi1ep7tCkt')
-        self.assertEqual(result, 'ok')
-        
+            result = self.api.btc_withdrawal('0.48650929','3EW92Ajg6sMT4hxK8ngEc7Ehrqkr9RoDt7')
+        self.assertIsInstance(result, bitso.Withdrawal)
+        self.assertIsInstance(result.details, dict)
+        self.assertIsInstance(result.created_at, datetime.datetime)
+        self.assertEqual(result.amount, Decimal("0.48650929"))
+
+    def test_eth_withdrawal(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "wid": "c5b8d7f0768ee91d3b33bee648318698",
+                "status": "pending",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "currency": "btc",
+                "method": "Ether",
+                "amount": "10.00",
+                "details": {
+                    "withdrawal_address": "0x55f03a62acc946dedcf8a0c47f16ec3892b29e6d",
+                    "tx_hash": null
+                }
+            }
+        }
+        """)
+        with mock.patch('requests.post', return_value=response):
+            result = self.api.eth_withdrawal('10.00','0x55f03a62acc946dedcf8a0c47f16ec3892b29e6d')
+        self.assertIsInstance(result, bitso.Withdrawal)
+        self.assertIsInstance(result.details, dict)
+        self.assertIsInstance(result.created_at, datetime.datetime)
+        self.assertEqual(result.amount, Decimal("10.00"))
+
+    def test_ripple_withdrawal(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "wid": "c5b8d7f0768ee91d3b33bee648318688",
+                "status": "pending",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "currency": "btc",
+                "method": "Ripple",
+                "amount": "0.48650929",
+                "details": {
+                    "withdrawal_address": "rG1QQv2nh2gr7RCZ1P8YYcBUKCCN633jCn",
+                    "tx_id": null
+                }
+            }
+        }
+        """)
+        with mock.patch('requests.post', return_value=response):
+            result = self.api.ripple_withdrawal('btc', '0.48650929','rG1QQv2nh2gr7RCZ1P8YYcBUKCCN633jCn')
+        self.assertIsInstance(result, bitso.Withdrawal)
+        self.assertIsInstance(result.details, dict)
+        self.assertIsInstance(result.created_at, datetime.datetime)
+        self.assertEqual(result.amount, Decimal("0.48650929"))
+
+    def test_spei_withdrawal(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "wid": "p4u8d7f0768ee91d3b33bee6483132i8",
+                "status": "pending",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "currency": "mxn",
+                "method": "SPEI Transfer",
+                "amount": "300.15",
+                "details": {
+                    "sender_name": "JUAN ESCUTIA",
+                    "receive_clabe": "012610001967722183",
+                    "sender_clabe": "646180115400467548",
+                    "numeric_reference": "80416",
+                    "concepto": "Tacos del viernes",
+                    "clave_rastreo": null,
+                    "beneficiary_name": "FRANCISCO MARQUEZ"
+                }
+            }
+        }
+        """)
+        with mock.patch('requests.post', return_value=response):
+            result = self.api.spei_withdrawal(amount='0.48650929', first_names="FRANCISCO", last_names="MARQUEZ", clabe="012610001967722183")
+        self.assertIsInstance(result, bitso.Withdrawal)
+        self.assertIsInstance(result.details, dict)
+        self.assertIsInstance(result.created_at, datetime.datetime)
+        self.assertEqual(result.amount, Decimal("300.15"))
+                                        
     
-    def test_lookup_orders(self):
-        response = FakeResponse(b'''[{
-           "amount": "0.01000000",
-           "created": "2015-11-12 12:37:01",
-           "price": "5600.00",
-           "book": "btc_mxn",
-           "id": "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
-           "type": "1",
-           "updated": "2015-11-12 12:37:40",
-           "status": "-1"
-        }]''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.open_orders()
-        print result
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].amount, Decimal("0.01000000"))
-        self.assertEqual(result[0].price, Decimal("5600"))
-        self.assertEqual(result[0].type, 'sell')
-        self.assertEqual(result[0].status, 'cancelled')
-        
 
-    def test_buy_limit_order(self):
-        response = FakeResponse(b'''
-           {
-              "amount": "0.10000000",
-              "datetime": "2015-11-12 12:53:28",
-              "price": "100.00",
-              "book": "btc_mxn",
-              "id": "kidxgibf009w85qykad1sdoktdmdlbo6t23akepkfzgn56mphzracfv6thjfs8lm",
-              "type": "0",
-              "status": "0"
-            }''')
+
+    def test_place_order(self):
+        response = FakeResponse(b"""
+        {
+            "success": true,
+            "payload": {
+                "book": "btc_mxn",
+                "amount": "0.01000000",
+                "created_at": "2016-04-08T17:52:31.000+00:00",
+                "updated_at": null,
+                "price": "5600.00",
+                "oid": "543cr2v32a1h684430tvcqx1b0vkr93wd694957cg8umhyrlzkgbaedmf976ia3v",
+                "side": "buy",
+                "status": "open",
+                "type": "limit"
+            }
+        }
+        """)
         with mock.patch('requests.post', return_value=response):
-            result = self.api.buy(amount='0.1', price='100')
+            result = self.api.place_order(book='btc_mxn', side='buy', order_type='limit', major='0.1', price='5600')
         self.assertIsInstance(result, bitso.Order)
-
-    def test_sell_limit_order(self):
-        response = FakeResponse(b'''
-           {
-              "amount": "0.01000000",
-              "datetime": "2015-11-12 13:29:33",
-              "price": "10000.00",
-              "book": "btc_mxn",
-              "id": "5umhs73uxry9ykblk923xxi48j4jhcwm7i40q7vnztxxd8jyil1gjkkr4obl1789",
-              "type": "1",
-              "status": "0"
-            }''')
-        with mock.patch('requests.post', return_value=response):
-            result = self.api.sell('.01', '10000')
-        print result
-        self.assertIsInstance(result, bitso.Order)
-        
-
+        self.assertIsInstance(result.created_at,datetime.datetime)
+        self.assertEqual(result.amount, Decimal('0.01000000'))
 
     def test_transfer_quote(self):
         response = FakeResponse(b'''
         {
-           "quote":{
+           "payload":{
               "btc_amount":"0.14965623",
               "currency":"MXN",
               "rate":"3340.99",
@@ -452,16 +653,14 @@ class PrivateApiTest(unittest.TestCase):
                 "verification_level_requirement":"0"
              }
           },
-          "timestamp":"1425101044",
-          "expires_epoch":"1425101104"
+          "created_at":"2016-04-08T17:52:31.000+00:00",
+          "expires_at":"2016-04-08T18:02:31.000+00:00"
        },
        "success":true
         }''')
         with mock.patch('requests.post', return_value=response):
             result = self.api.transfer_quote(amount='0.14965623', currency='MXN')
-        print result
         self.assertIsInstance(result, bitso.TransactionQuote)
-        self.assertEqual(result.success, True)
         self.assertEqual(result.btc_amount, Decimal('0.14965623'))
         self.assertEqual(result.currency, 'MXN')
         self.assertEqual(result.rate, Decimal('3340.99'))
@@ -478,17 +677,17 @@ class PrivateApiTest(unittest.TestCase):
     def test_create_transfer(self):
         response = FakeResponse(b'''
         {
-            "order":{
+            "payload":{
               "btc_amount":"0.14965623",
               "btc_pending":"0",
               "btc_received":"0",
               "confirmation_code":"9b2a4",
-              "created_at":"1425101044",
+              "created_at": "2016-04-08T17:52:31.000+00:00",
               "currency":"MXN",
               "currency_amount":"0",
               "currency_fees":"0",
               "currency_settled":"0",
-              "expires_epoch":1425101104,
+              "expires_at":"2016-04-08T18:02:31.000+00:00",
               "fields":{
                  "phone_number":"5554181042"
               },
@@ -505,9 +704,7 @@ class PrivateApiTest(unittest.TestCase):
                                    currency='MXN',
                                    rate='7585.20',
                                    payment_outlet='pm')
-        print result
         self.assertIsInstance(result, bitso.TransactionOrder)
-        self.assertEqual(result.success, True)
         self.assertEqual(result.btc_amount, Decimal('0.14965623'))
 
         self.assertEqual(result.btc_pending, Decimal('0'))
@@ -519,7 +716,7 @@ class PrivateApiTest(unittest.TestCase):
         self.assertEqual(result.wallet_address, 'mgKZfNdFJgztvfvhEaGgMTQRQ2iHCadHGa')
         
 
-        
+
         
 if __name__ == '__main__':
     unittest.main()
