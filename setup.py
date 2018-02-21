@@ -20,6 +20,7 @@ setup(
         "requests >= 2.2.1",
         "websocket-client == 0.40.0",
         "python-dateutil >= 1.5",
-        "mock >= 2.0.0" 
+        "mock >= 2.0.0",
+        "future >= 0.16.0"
     ],
 )

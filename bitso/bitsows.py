@@ -23,9 +23,11 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
+from __future__ import print_function
 import json
+
 import websocket
-from models import StreamUpdate
+from .models import StreamUpdate
 
 
 class Listener(object):
@@ -58,15 +60,15 @@ class Client(object):
         self.ws_client.run_forever()
 
     def close(self):
-        print "received close"
+        print ("received close")
         self.ws_client.close()
 
     def _on_close(self, ws):
-        print "closing connection"
+        print ("closing connection")
         self.listener.on_close()
         
     def _on_error(self, ws, error):
-        print error
+        print (error)
         
     def _on_open(self, ws):
         for channel in self.channels:

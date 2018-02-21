@@ -24,18 +24,26 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-
 import hashlib
 import hmac
 import json
 import time
-import requests
-from urlparse import urlparse
-from urllib import urlencode
 
+
+import requests
+
+try:
+  basestring
+except NameError:
+  basestring = str
+
+try:
+    from urllib.parse import urlparse, urlencode
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlencode
 
 from bitso import (ApiError, ApiClientError, Ticker, OrderBook, Balances, Fees, Trade, UserTrade, Order, TransactionQuote, TransactionOrder, LedgerEntry, FundingDestination, Withdrawal, Funding, AvailableBooks, AccountStatus, AccountRequiredField)
-
 
 def current_milli_time():
     nonce =  str(int(round(time.time() * 1000000)))
@@ -54,19 +62,19 @@ class Api(object):
       To get the Bitso price ticker:
       
         >>> ticker = api.ticker()
-        >>> print ticker.ask
-        >>> print ticker.bid
+        >>> print (ticker.ask)
+        >>> print (ticker.bid)
 
       To use the private endpoints, initiate bitso.Api with a client_id,
       api_key, and api_secret (see https://bitso.com/developers?shell#private-endpoints):
       
         >>> api = bitso.Api(API_KEY, API_SECRET)
         >>> balance = api.balance()
-        >>> print balance.btc_available
-        >>> print balance.mxn_available
+        >>> print (balance.btc_available)
+        >>> print (balance.mxn_available)
     """
     
-    def __init__(self, key=None, secret=None):
+    def __init__(self, key=None, secret=None, dev=None):
         """Instantiate a bitso.Api object.
         
         Args:
@@ -77,8 +85,15 @@ class Api(object):
 
   
         """
-        self.base_url_v2 = "https://bitso.com/api/v2"
-        self.base_url = "https://bitso.com/api/v3"
+        
+        if dev:
+            self.base_url_v2 = "https://dev.bitso.com/api/v2"
+            self.base_url = "https://dev.bitso.com/api/v3"
+    
+        else:
+            self.base_url_v2 = "https://api.bitso.com/v2"
+            self.base_url = "https://api.bitso.com/v3"
+        
         self.key = key
         self._secret = secret
 
@@ -516,11 +531,11 @@ class Api(object):
         parameters['type'] = kwargs.get('order_type')
         parameters['side'] = kwargs.get('side')
         if 'major' in kwargs:
-            parameters['major'] = str(kwargs['major']).encode('utf-8')
+            parameters['major'] = str(kwargs['major'])
         if 'minor' in kwargs:
-            parameters['minor'] = str(kwargs['minor']).encode('utf-8')
+            parameters['minor'] = str(kwargs['minor'])
         if 'price' in kwargs:
-            parameters['price'] = str(kwargs['price']).encode('utf-8')
+            parameters['price'] = str(kwargs['price'])
 
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return resp['payload']
@@ -559,7 +574,7 @@ class Api(object):
         """
         url = '%s/bitcoin_withdrawal/' % self.base_url
         parameters = {}
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['amount'] = str(amount)
         parameters['address'] = address
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return Withdrawal._NewFromJsonDict(resp['payload'])
@@ -570,16 +585,16 @@ class Api(object):
 
         Args:
           amount (str):
-            The amount of BTC to withdraw from your account
+            The amount of ETH to withdraw from your account
           address (str):
-            The Bitcoin address to send the amount to
+            The Ethereum address to send the amount to
         
         Returns:
           ok      
         """
         url = '%s/ether_withdrawal/' % self.base_url
         parameters = {}
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['amount'] = str(amount)
         parameters['address'] = address
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return Withdrawal._NewFromJsonDict(resp['payload'])
@@ -602,8 +617,8 @@ class Api(object):
 
         url = '%s/ripple_withdrawal/' % self.base_url
         parameters = {}
-        parameters['currency'] = str(currency).encode('utf-8')
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['currency'] = str(currency)
+        parameters['amount'] = str(amount)
         parameters['address'] = address
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return Withdrawal._NewFromJsonDict(resp['payload'])
@@ -636,7 +651,7 @@ class Api(object):
         
         url = '%s/spei_withdrawal/' % self.base_url
         parameters = {}
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['amount'] = str(amount)
         parameters['recipient_given_names'] = first_names
         parameters['recipient_family_names'] = last_names
         parameters['clabe'] = clabe
@@ -674,7 +689,7 @@ class Api(object):
         
         url = '%s/debit_card_withdrawal/' % self.base_url
         parameters = {}
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['amount'] = str(amount)
         parameters['recipient_given_names'] = first_names
         parameters['recipient_family_names'] = last_names
         parameters['card_number'] = card_number
@@ -708,7 +723,7 @@ class Api(object):
         
         url = '%s/phone_withdrawal/' % self.base_url
         parameters = {}
-        parameters['amount'] = str(amount).encode('utf-8')
+        parameters['amount'] = str(amount)
         parameters['recipient_given_names'] = first_names
         parameters['recipient_family_names'] = last_names
         parameters['phone_number'] = phone_number
@@ -770,9 +785,9 @@ class Api(object):
         url = '%s/transfer_quote' % self.base_url
         parameters = {}
         if amount:
-            parameters['amount'] = str(amount).encode('utf-8')
+            parameters['amount'] = str(amount)
         elif btc_amount:
-            parameters['btc_amount'] = str(btc_amount).encode('utf-8')
+            parameters['btc_amount'] = str(btc_amount)
 
         parameters['currency'] = currency
         parameters['full'] = True
@@ -836,14 +851,14 @@ class Api(object):
         url = '%s/transfer_create' % self.base_url
         parameters = {}
         if amount:
-            parameters['amount'] = str(amount).encode('utf-8')
+            parameters['amount'] = str(amount)
         elif btc_amount:
-            parameters['btc_amount'] = str(btc_amount).encode('utf-8')
+            parameters['btc_amount'] = str(btc_amount)
 
         parameters['currency'] = currency
-        parameters['rate'] = str(rate).encode('utf-8')
+        parameters['rate'] = str(rate)
         parameters['payment_outlet'] = payment_outlet
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             parameters[k] = str(v).encode('utf-8')
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return TransactionOrder._NewFromJsonDict(resp['payload']) 
@@ -895,6 +910,7 @@ class Api(object):
         headers=None
         if params == None:
             params = {}
+        params = {k: v.decode("utf-8") if isinstance(v, bytes) else v for k, v in params.items()}
         if private:
             headers = self._build_auth_header(verb, url, json.dumps(params))
         if verb == 'GET':
@@ -915,7 +931,9 @@ class Api(object):
                 resp = requests.delete(url, headers=headers)
             except requests.RequestException as e:
                 raise
-        data = self._parse_json(resp.content.decode('utf-8'))
+
+        content = resp.content
+        data = self._parse_json(content if isinstance(content, basestring) else content.decode('utf-8'))
         return data
 
     def _build_url(self, url, params):

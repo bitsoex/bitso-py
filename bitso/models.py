@@ -23,10 +23,16 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
+try:
+  basestring
+except NameError:
+  basestring = str
 
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+
 import dateutil.parser
+from six import string_types
 
 
 class BaseModel(object):
@@ -139,7 +145,7 @@ class Ticker(BaseModel):
             setattr(self, param, val)
 
     def __repr__(self):
-        return "Ticker(book={book},ask={ask}, bid={bid}, high={high}, last={last}, low={low}, created_at={created_at}, vwaplow={vwap})".format(
+        return "Ticker(book={book},ask={ask},bid={bid}, high={high}, last={last}, low={low}, volume={volume}, created_at={created_at}, vwap={vwap})".format(
             book=self.book,
             ask=self.ask,
             bid=self.bid,
@@ -147,6 +153,7 @@ class Ticker(BaseModel):
             low=self.low,
             last=self.last,
             vwap=self.vwap,
+            volume=self.volume,
             created_at=self.created_at)
 
 class PublicOrder(BaseModel):
@@ -269,7 +276,7 @@ class WithdrawalFees(BaseModel):
 
     def __init__(self, **kwargs):
         self.currencies = []
-        for currency,fee in kwargs.iteritems():
+        for currency,fee in kwargs.items():
             self.currencies.append(currency)
             setattr(self, currency, Decimal(fee))
 
@@ -495,7 +502,7 @@ class OutletDictionary(dict):
             if isinstance(v, dict):
                 self[k] = OutletDictionary(v)
             else:
-                if isinstance(v, basestring) and k in _decimal_keys:
+                if isinstance(v, string_types) and k in _decimal_keys:
                     v = Decimal(v)
                 elif k == 'available':
                     if v=='1':

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 #
 #The MIT License (MIT)
 #
@@ -35,11 +34,12 @@ from bitso import Client, Listener
 
 class BasicBitsoListener(Listener):
     def on_connect(self):
-        print "Connected"
+        print ("Connected")
         
     def on_update(self, data):
         for obj in data.updates:
-            print obj
+             print (obj)
+
         
 if __name__ == '__main__':
     listener = BasicBitsoListener()

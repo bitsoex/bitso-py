@@ -28,6 +28,12 @@ import os
 import unittest
 import sys
 import requests
+from six import string_types
+
+try:
+    basestring
+except NameError:
+    basestring = str
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -82,7 +88,7 @@ class PublicApiTest(unittest.TestCase):
         self.assertIsInstance(ab, bitso.AvailableBooks)
         for book in ab.books:
             self.assertIsInstance(getattr(ab, book), bitso.Book)
-        self.assertIsInstance(ab.btc_mxn.symbol, basestring)
+        self.assertIsInstance(ab.btc_mxn.symbol, string_types)
         self.assertEquals(ab.btc_mxn.symbol, 'btc_mxn')
         self.assertEquals(ab.btc_mxn.minimum_amount, Decimal(".003"))
         self.assertEquals(ab.btc_mxn.maximum_amount, Decimal("1000.00"))
@@ -842,7 +848,7 @@ class PrivateApiTest(unittest.TestCase):
         self.assertEqual(result.rate, Decimal('3340.99'))
         self.assertEqual(result.gross, Decimal('500.00'))
         self.assertIsInstance(result.outlets, dict)
-        self.assertEqual(result.outlets['sp']['minimum_transaction'], Decimal('500.00'))
+        self.assertEqual(Decimal(result.outlets['sp']['minimum_transaction']), Decimal('500.00'))
         self.assertEqual(result.outlets['sp']['maximum_transaction'], Decimal('2500000.00'))
         self.assertEqual(result.outlets['bw']['daily_limit'], Decimal('2500000.00'))
         self.assertEqual(result.outlets['bw']['fee'], Decimal('500.00'))

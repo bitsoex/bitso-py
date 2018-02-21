@@ -1,6 +1,7 @@
 # bitso-py #
 
-A Python 2 wrapper for the [Bitso API](https://bitso.com/api_info/) 
+
+A Python 2 and Python 3 wrapper for the [Bitso API](https://bitso.com/api_info/) 
 
 [![Build Status](https://travis-ci.org/mariorz/python-bitso.svg?branch=master)](https://travis-ci.org/mariorz/python-bitso) [![Requirements Status](https://requires.io/github/mariorz/python-bitso/requirements.svg?branch=master)](https://requires.io/github/mariorz/python-bitso/requirements/?branch=master) 
 
@@ -16,7 +17,13 @@ A Python 2 wrapper for the [Bitso API](https://bitso.com/api_info/)
 
 ```python
  >>> import bitso
+ 
+## Production account
  >>> api = bitso.Api(API_KEY, API_SECRET)
+
+## Developer account
+ >>> api = bitso.Api(API_KEY, API_SECRET,"dev")
+  
 ```
 
 
@@ -402,19 +409,19 @@ u'3CEWgs1goBbafUoThjWff4oX4wQKfxqpeV'
 ##         - string
 ## address - The Bitcoin address to send the amount to
 ##         - string
->>> api.btc_withdrawal('14', '0x55f03a62acc946dedcf8a0c47f16ec3892b29e6d')
+>>> api.btc_withdrawal('0.000000001', '1TVXn5ajmMQEbkiYNobgHVutVtMWcNZGV')
 ok   # Returns 'ok' on success
 ```
 
 ### Ether Withdrawal ###
 
 ```python
-## Triggers a bitcoin withdrawal from your account
-## amount  - The amount of BTC to withdraw from your account
+## Triggers an ether withdrawal from your account
+## amount  - The amount of ETH to withdraw from your account
 ##         - string
-## address - The Bitcoin address to send the amount to
+## address - The Ethereum address to send the amount to
 ##         - string
->>> api.eth_withdrawal('1.10', '1TVXn5ajmMQEbkiYNobgHVutVtMWcNZGV')
+>>> api.eth_withdrawal('0.000000001', '0x55f03a62acc946dedcf8a0c47f16ec3892b29e6d')
 ok   # Returns 'ok' on success
 ```
 
@@ -426,7 +433,7 @@ ok   # Returns 'ok' on success
 ## Triggers a ripple withdrawal from your account
 ## currency  - The currency to withdraw
 ##         - string
-## amount  - The amount of BTC to withdraw from your account
+## amount  - The amount of currency to withdraw from your account
 ##         - string
 ## address - The ripple address to send the amount to
 ##         - string
@@ -476,9 +483,9 @@ The workflow is as follows:
 ## Create transfer using quote
 >>> transfer = api.transfer_create(amount='25.0', currency='MXN', rate=quote.rate, payment_outlet='vo', email_address='mario@ret.io', recipient_given_name='mario romero')
 ## Send bitcoins to address given
->>> print transfer.wallet_address
+>>> print(transfer.wallet_address)
 ## Check Transfer status, after 1 confirmation, pesos are delivered
->>> print api.transfer_status(transfer.id).status
+>>> print(api.transfer_status(transfer.id).status)
 u'confirming'
 ```
 
@@ -503,7 +510,7 @@ u'confirming'
 ##         - string
 
 >>> quote = api.transfer_quote(amount='25.0', currency='MXN')
->>> print quote
+>>> print(quote)
 TransactionQuote(btc_amount=0.00328834, currency=MXN, rate=7602.60, created_at=2016-05-03 00:33:06, expires_at=2016-05-03 00:34:06, gross=25.00)
 >>> quote.btc_amount
 Decimal('0.00328834')
@@ -556,7 +563,7 @@ Decimal('0.00328834')
 ##      - string
 
 >>> transfer = api.transfer_create(amount='25.0', currency='MXN', rate=quote.rate, payment_outlet='vo', email_address='satoshin@gmx.com', recipient_given_name='satoshi nakamoto')
->>> print transfer
+>>> print(transfer)
 TransactionQuote(btc_amount=0.00328834, currency=MXN, rate=7602.60, created_at=2016-05-03 00:33:06, expires_at=2016-05-03 00:34:06, gross=25.00)
 >>> transfer.btc_amount
 Decimal('0.00328834')
@@ -575,7 +582,7 @@ u'3LiLpKyfXJmeDcD5ABGtmHGjkxnZTHnBxv'}
 ##                method.
 ##         - string
 
->>> print api.transfer_status(transfer.id).status
+>>> print(api.transfer_status(transfer.id).status)
 u'confirming'
 
 ```
@@ -596,11 +603,11 @@ from bitso import websocket
 
 class BasicBitsoListener(websocket.Listener):
     def on_connect(self):
-        print "Connected"
+        print("Connected")
         
     def on_update(self, data):
         for obj in data.updates:
-            print obj
+            print(obj)
         
 if __name__ == '__main__':
     listener = BasicBitsoListener()
