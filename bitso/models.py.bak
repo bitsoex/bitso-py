@@ -39,7 +39,7 @@ class BaseModel(object):
     @classmethod
     def _NewFromJsonDict(cls, data, **kwargs):
         if kwargs:
-            for key, val in list(kwargs.items()):
+            for key, val in kwargs.items():
                 data[key] = val
         return cls(**data)
 
@@ -58,7 +58,7 @@ class Book(BaseModel):
             'maximum_value': Decimal(kwargs.get('maximum_value'))
         }
         
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -95,7 +95,7 @@ class AccountStatus(BaseModel):
             'monthly_remaining': Decimal(kwargs.get('monthly_remaining'))
         }
         
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -110,7 +110,7 @@ class AccountRequiredField(BaseModel):
             'description': kwargs.get('field_description'),
         }
         
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -135,7 +135,7 @@ class Ticker(BaseModel):
             'created_at': dateutil.parser.parse(kwargs.get('created_at'))
         }
         
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -158,7 +158,7 @@ class PublicOrder(BaseModel):
         }
 
             
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
         if kwargs.get('oid'):
@@ -187,7 +187,7 @@ class OrderBook(BaseModel):
             'sequence': int(kwargs.get('sequence'))
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             if param in ['asks', 'bids']:
                 public_orders = []
                 for order in val:
@@ -218,7 +218,7 @@ class Balance(BaseModel):
             'available': Decimal(kwargs.get('available'))
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -255,7 +255,7 @@ class Fee(BaseModel):
             'fee_percent': Decimal(kwargs.get('fee_percent'))
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
             
     def __repr__(self):
@@ -269,7 +269,7 @@ class WithdrawalFees(BaseModel):
 
     def __init__(self, **kwargs):
         self.currencies = []
-        for currency,fee in kwargs.items():
+        for currency,fee in kwargs.iteritems():
             self.currencies.append(currency)
             setattr(self, currency, Decimal(fee))
 
@@ -311,7 +311,7 @@ class Trade(BaseModel):
             'created_at': dateutil.parser.parse(kwargs.get('created_at'))
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -337,7 +337,7 @@ class Withdrawal(BaseModel):
             'details': kwargs.get('details')
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -361,7 +361,7 @@ class Funding(BaseModel):
             'details': kwargs.get('details')
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -390,7 +390,7 @@ class UserTrade(BaseModel):
             'side': kwargs.get('side')
         }
 
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
 
     def __repr__(self):
@@ -407,7 +407,7 @@ class UserTrade(BaseModel):
 class LedgerEntry(BaseModel):
     """A class that represents a Bitso Ledger entry."""
     def __init__(self, **kwargs):
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             if param == 'created_at':
                 value = dateutil.parser.parse(value)
             if param == 'balance_updates':
@@ -419,7 +419,7 @@ class LedgerEntry(BaseModel):
 class BalanceUpdate(BaseModel):
     """A class that represents a Bitso Balance Update"""
     def __init__(self, **kwargs):
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             if param == 'amount':
                 value = Decimal(value)
             setattr(self, param, value)
@@ -446,7 +446,7 @@ class Order(BaseModel):
             'status': kwargs.get('status'),
             'type': kwargs.get('type')
         }
-        for (param, val) in list(self._default_params.items()):
+        for (param, val) in self._default_params.items():
             setattr(self, param, val)
             setattr(self, 'updated_at',  dateutil.parser.parse(kwargs.get('updated_at')))
 
@@ -472,7 +472,7 @@ class Order(BaseModel):
 class FundingDestination(BaseModel):
     """A class that represents a Bitso Funding Destination"""
     def __init__(self, **kwargs):
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             setattr(self, param, value)
 
     def __repr__(self):
@@ -491,11 +491,11 @@ class OutletDictionary(dict):
                           'fee',
                           'net')
 
-        for k, v in list(data.items()):
+        for k, v in data.items():
             if isinstance(v, dict):
                 self[k] = OutletDictionary(v)
             else:
-                if isinstance(v, str) and k in _decimal_keys:
+                if isinstance(v, basestring) and k in _decimal_keys:
                     v = Decimal(v)
                 elif k == 'available':
                     if v=='1':
@@ -512,7 +512,7 @@ class TransactionQuote(BaseModel):
         
     def __init__(self, **kwargs):
 
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             if param=='outlets':
                 setattr(self, param, OutletDictionary(value))
             else:
@@ -548,7 +548,7 @@ class TransactionOrder(BaseModel):
         setattr(self, 'btc_amount', None)
 
 
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             setattr(self, param, value)
         #setattr(self, 'created_at', dateutil.parser.parse(kwargs.get('created_at')))
         setattr(self, 'expires_at', dateutil.parser.parse(self.expires_at))
@@ -569,7 +569,7 @@ class TransactionOrder(BaseModel):
 
 class OrderUpdate(BaseModel):
     def __init__(self, **kwargs):
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             if param == 'd':
                 setattr(self, 'timestamp', value)
                 setattr(self, 'datetime', datetime.fromtimestamp(int(value)/1000))
@@ -603,7 +603,7 @@ class OrderUpdate(BaseModel):
 
 class TradeUpdate(BaseModel):
     def __init__(self, **kwargs):
-        for (param, value) in list(kwargs.items()):
+        for (param, value) in kwargs.items():
             if param == 'r':
                 setattr(self, 'rate', Decimal(str(value)))
             elif param  == 'a':
