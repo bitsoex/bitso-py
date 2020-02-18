@@ -30,8 +30,8 @@ import hmac
 import json
 import time
 import requests
-from urllib.parse import urlparse
-from urllib.parse import urlencode
+from urlparse import urlparse
+from urllib import urlencode
 
 
 from bitso import (ApiError, ApiClientError, Ticker, OrderBook, Balances, Fees, Trade, UserTrade, Order, TransactionQuote, TransactionOrder, LedgerEntry, FundingDestination, Withdrawal, Funding, AvailableBooks, AccountStatus, AccountRequiredField)
@@ -328,7 +328,7 @@ class Api(object):
         Returns:
           A list bitso.Withdrawal instances.
         """
-        if isinstance(wids, str):
+        if isinstance(wids, basestring):
             wids = [wids]
         
         url = '%s/withdrawals/' % (self.base_url)
@@ -363,7 +363,7 @@ class Api(object):
         Returns:
           A list bitso.Funding instances.
         """
-        if isinstance(fids, str):
+        if isinstance(fids, basestring):
             fids = [fids]
         
         url = '%s/fundings/' % (self.base_url)
@@ -409,9 +409,9 @@ class Api(object):
         url = '%s/user_trades/' % self.base_url
         if isinstance(tids, int):
             tids = str(tids)
-        if isinstance(tids, str):
+        if isinstance(tids, basestring):
             tids = [tids]
-        tids = list(map(str, tids))
+        tids = map(str, tids)
         if tids:
             url+='%s/' % ('-'.join(tids))            
         parameters = {}
@@ -422,8 +422,8 @@ class Api(object):
         if limit:
             parameters['limit'] = limit
         if sort:
-            if not isinstance(sort, str) or sort.lower() not in ['asc', 'desc']:
-                 raise ApiClientError({'message': "sort is not 'asc' or 'desc' "})
+            if not isinstance(sort, basestring) or sort.lower() not in ['asc', 'desc']:
+                 raise ApiClientError({u'message': u"sort is not 'asc' or 'desc' "})
             parameters['sort'] = sort
         resp = self._request_url(url, 'GET', params=parameters, private=True)
         return [UserTrade._NewFromJsonDict(x) for x in resp['payload']]
@@ -456,7 +456,7 @@ class Api(object):
         Returns:
           A list of bitso.Order instances.        
         """
-        if isinstance(oids, str):
+        if isinstance(oids, basestring):
             oids = [oids]
         url = '%s/orders/' % self.base_url
         if oids:
@@ -474,7 +474,7 @@ class Api(object):
         Returns:
           A list of Order IDs (OIDs) for the canceled orders. Orders may not be successfully cancelled if they have been filled, have been already cancelled, or the OIDs are incorrect.        
         """
-        if isinstance(oids, str):
+        if isinstance(oids, basestring):
             oids = [oids]        
         url = '%s/orders/' % self.base_url
         url+='%s/' % ('-'.join(oids))
@@ -504,11 +504,11 @@ class Api(object):
         """
 
         if kwargs.get('book') is None:
-            raise ApiClientError({'message': 'book not specified.'})
+            raise ApiClientError({u'message': u'book not specified.'})
         if kwargs.get('side') is None:
-            raise ApiClientError({'message': 'side not specified.'})
+            raise ApiClientError({u'message': u'side not specified.'})
         if kwargs.get('order_type') is None:
-            raise ApiClientError({'message': 'order type not specified.'})
+            raise ApiClientError({u'message': u'order type not specified.'})
 
         url = '%s/orders/' % self.base_url
         parameters = {}
@@ -761,11 +761,11 @@ class Api(object):
         """
         
         if currency is None:
-            raise ApiClientError({'message': "Currency symbol not specified"})
+            raise ApiClientError({u'message': u"Currency symbol not specified"})
         if amount is None and btc_amount is None:
-            raise ApiClientError({'message': "Neither 'amount' nor 'btc_amount' are specified"})
+            raise ApiClientError({u'message': u"Neither 'amount' nor 'btc_amount' are specified"})
         if amount is not None and btc_amount is not None:
-            raise ApiClientError({'message': "'amount' and 'btc_amount' are mutually exclusive. Pick one"})
+            raise ApiClientError({u'message': u"'amount' and 'btc_amount' are mutually exclusive. Pick one"})
         
         url = '%s/transfer_quote' % self.base_url
         parameters = {}
@@ -822,15 +822,15 @@ class Api(object):
         
         
         if currency is None:
-            raise ApiClientError({'message': "'currency' not specified"})
+            raise ApiClientError({u'message': u"'currency' not specified"})
         if amount is None and btc_amount is None:
-            raise ApiClientError({'message': "Neither 'amount' nor 'btc_amount' are specified"})
+            raise ApiClientError({u'message': u"Neither 'amount' nor 'btc_amount' are specified"})
         if amount is not None and btc_amount is not None:
-            raise ApiClientError({'message': "'amount' and 'btc_amount' are mutually exclusive. Pick one"})
+            raise ApiClientError({u'message': u"'amount' and 'btc_amount' are mutually exclusive. Pick one"})
         if rate is None:
-            raise ApiClientError({'message': "'rate' not specified"})
+            raise ApiClientError({u'message': u"'rate' not specified"})
         if payment_outlet is None:
-            raise ApiClientError({'message': "'payment_outlet' not specified"})
+            raise ApiClientError({u'message': u"'payment_outlet' not specified"})
 
 
         url = '%s/transfer_create' % self.base_url
@@ -843,7 +843,7 @@ class Api(object):
         parameters['currency'] = currency
         parameters['rate'] = str(rate).encode('utf-8')
         parameters['payment_outlet'] = payment_outlet
-        for k, v in kwargs.items():
+        for k, v in kwargs.iteritems():
             parameters[k] = str(v).encode('utf-8')
         resp = self._request_url(url, 'POST', params=parameters, private=True)
         return TransactionOrder._NewFromJsonDict(resp['payload']) 
@@ -859,7 +859,7 @@ class Api(object):
 
         """
         if transfer_id is None:
-            raise ApiClientError({'message': "'transfer_id' not specified"})
+            raise ApiClientError({u'message': u"'transfer_id' not specified"})
         url = '%s/transfer/%s' % (self.base_url, transfer_id)
         parameters = {}
         resp = self._request_url(url, 'GET', params=parameters, private=True)
@@ -928,7 +928,7 @@ class Api(object):
             return None
         else:
             param_tuples = []
-            for k,v in list(parameters.items()):
+            for k,v in parameters.items():
                 if v is None:
                     continue
                 if isinstance(v, (list, tuple)):
