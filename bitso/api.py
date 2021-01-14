@@ -77,7 +77,7 @@ class Api(object):
         >>> print balance.mxn_available
     """
     
-    def __init__(self, key=None, secret=None):
+    def __init__(self, key=None, secret=None, timeout=0):
         """Instantiate a bitso.Api object.
         
         Args:
@@ -92,6 +92,7 @@ class Api(object):
         self.base_url = "https://bitso.com/api/v3"
         self.key = key
         self._secret = secret
+        self.timeout = timeout
 
     def available_books(self):
         """
@@ -914,17 +915,17 @@ class Api(object):
             if private:
                 headers = self._build_auth_header(verb, url)
             try:
-                resp = requests.get(url, headers=headers)
+                resp = requests.get(url, headers=headers, timeout=self.timeout)
             except requests.RequestException as e:
                 raise
         elif verb == 'POST':
             try:
-                resp = requests.post(url, json=params, headers=headers)
+                resp = requests.post(url, json=params, headers=headers, timeout=self.timeout)
             except requests.RequestException as e:
                 raise
         elif verb == 'DELETE':
             try:
-                resp = requests.delete(url, headers=headers)
+                resp = requests.delete(url, headers=headers, timeout=self.timeout)
             except requests.RequestException as e:
                 raise
         content = resp.content
