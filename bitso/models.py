@@ -203,10 +203,11 @@ class OrderBook(BaseModel):
 
 
     def __repr__(self):
-        return "OrderBook({num_asks} asks, {num_bids} bids, updated_at={updated_at})".format(
+        return "OrderBook({num_asks} asks, {num_bids} bids, updated_at={updated_at}, sequence={sequence})".format(
             num_asks=len(self.asks),
             num_bids=len(self.bids),
-            updated_at=self.updated_at)
+            updated_at=self.updated_at,
+            sequence=self.sequence)
 
 
 class Balance(BaseModel):
