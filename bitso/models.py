@@ -581,9 +581,9 @@ class OrderUpdate(BaseModel):
             elif param == 'r':
                 setattr(self, 'rate', Decimal(str(value)))
             elif param == 't':
-                if value == 0:
+                if value == 1:
                     setattr(self, 'side', 'bid')
-                elif value == 1:
+                elif value == 0:
                     setattr(self, 'side', 'ask')
             elif param  == 'a':
                 setattr(self, 'amount', Decimal(str(value)))
