@@ -151,9 +151,11 @@ class PublicApiTest(unittest.TestCase):
        }
     }
             """)
+        expected_repr = "OrderBook(3 asks, 2 bids, updated_at=2016-04-08 17:52:31+00:00, sequence=27214)"
         with mock.patch('requests.get', return_value=response):
             result = self.api.order_book('btc_mxn')
         self.assertIsInstance(result, bitso.OrderBook)
+        self.assertEqual(result.__repr__(), expected_repr)
         self.assertIsInstance(result.asks, list)
         self.assertEqual(len(result.asks), 3)
         self.assertIsInstance(result.bids, list)
