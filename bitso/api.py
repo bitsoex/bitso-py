@@ -77,7 +77,7 @@ class Api(object):
         >>> print balance.mxn_available
     """
     
-    def __init__(self, key=None, secret=None, timeout=0):
+    def __init__(self, key=None, secret=None, timeout=None):
         """Instantiate a bitso.Api object.
         
         Args:
